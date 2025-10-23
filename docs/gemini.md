@@ -78,6 +78,14 @@ For project-specific instructions, ALWAYS refer to the `INITIAL-PROMPT.md` file 
 *   **Secret Management**: Never commit secrets to the repository; use environment variables, vaults, or secure storage
 *   **Input Validation**: Implement comprehensive input validation and sanitization to protect against injection attacks
 *   **Authentication & Authorization**: Implement proper authentication and authorization for all webhooks and API endpoints
+*   **Webhook Validation**: Always validate incoming webhook requests using platform-specific verification mechanisms (e.g., signature verification, token validation)
+*   **Rate Limiting**: Implement rate limiting for all public endpoints to prevent abuse and DoS attacks
+*   **CORS Configuration**: Configure Cross-Origin Resource Sharing (CORS) policies appropriately for API endpoints
+*   **Data Encryption**: Encrypt sensitive data in transit using HTTPS and at rest when stored in databases or files
+*   **Principle of Least Privilege**: Assign minimal required permissions to services and API keys
+*   **Security Headers**: Implement security headers (e.g., CSP, HSTS, X-Frame-Options) to protect against common web vulnerabilities
+*   **File Upload Validation**: When handling file uploads, validate file types, sizes, and scan for malicious content
+*   **API Key Management**: Regularly rotate API keys and use different keys for different environments
 
 ---
 
@@ -92,10 +100,22 @@ For project-specific instructions, ALWAYS refer to the `INITIAL-PROMPT.md` file 
 
 ## Documentation Standards
 
-*   **API Documentation**: Maintain up-to-date API documentation for all endpoints
-*   **Inline Documentation**: Include meaningful comments and documentation for complex logic
-*   **Architecture Documentation**: Keep architectural decision records (ADRs) up to date
+*   **API Documentation**: Maintain up-to-date API documentation for all endpoints with request/response examples, error codes, and authentication requirements
+*   **Inline Documentation**: Include meaningful comments and documentation for complex logic, algorithms, and business rules
+*   **Architecture Documentation**: Keep architectural decision records (ADRs) up to date for significant design choices and trade-offs
 *   **README Updates**: Update README files with any significant feature additions or changes
+*   **Code Documentation**: Use consistent documentation formats (e.g., JSDoc, Python docstrings) for functions, classes, and modules
+*   **Architecture Diagrams**: Create and maintain system architecture diagrams showing component relationships and data flow
+*   **API Contract Documentation**: Document API contracts with tools like OpenAPI/Swagger for better client integration
+*   **Deployment Documentation**: Maintain detailed deployment guides for different environments (dev, staging, production)
+*   **Configuration Documentation**: Document all configuration options, environment variables, and their impact on system behavior
+*   **Troubleshooting Guides**: Provide comprehensive troubleshooting guides with common issues and solutions
+*   **Onboarding Documentation**: Create clear onboarding documentation for new team members with setup instructions and project overview
+*   **Change Log Maintenance**: Maintain a changelog documenting significant changes, feature additions, and bug fixes
+*   **Code Examples**: Include code examples and usage patterns for complex systems and APIs
+*   **Performance Documentation**: Document performance characteristics, known bottlenecks, and optimization opportunities
+*   **Security Documentation**: Document security considerations, authentication flows, and secure usage patterns
+*   **Testing Documentation**: Document testing strategies, test environments, and how to run different types of tests
 
 ---
 
@@ -150,10 +170,21 @@ Commit messages should be simple, concise, and descriptive. Avoid using special 
 
 ## Performance Optimization
 
-*   **Performance Budget**: Define and maintain performance budgets for critical metrics
+*   **Performance Budget**: Define and maintain performance budgets for critical metrics (response times, throughput, memory usage)
 *   **Resource Management**: Always ensure proper and timely cleanup of all allocated resources (e.g., HTTP connections, timers, event listeners) to prevent leaks
 *   **Optimization Reviews**: Conduct performance optimization reviews during code reviews
 *   **Scalability Planning**: Consider scalability implications during architectural decisions
+*   **Caching Strategies**: Implement appropriate caching at multiple levels (in-memory, Redis, CDN) to reduce redundant computation and API calls
+*   **Database Optimization**: Use proper indexing, query optimization, and connection pooling for database operations
+*   **Asynchronous Processing**: Use queues and background jobs for time-consuming operations to keep response times low
+*   **Code Profiling**: Regularly profile code to identify performance bottlenecks and optimize critical paths
+*   **Memory Management**: Monitor memory usage and implement proper garbage collection patterns to avoid memory leaks
+*   **API Efficiency**: Minimize API round trips by using batch operations and optimizing data fetching patterns
+*   **Compression**: Implement compression (gzip/Brotli) for data transfer to reduce bandwidth and improve response times
+*   **Lazy Loading**: Implement lazy loading for non-critical resources to improve initial load times
+*   **Connection Pooling**: Use connection pooling for database and external API connections to reduce connection overhead
+*   **CDN Usage**: Leverage Content Delivery Networks for serving static assets and media files
+*   **Concurrency Management**: Use appropriate concurrency models (async/await, threading) to handle multiple requests efficiently
 
 ---
 
@@ -163,6 +194,18 @@ Commit messages should be simple, concise, and descriptive. Avoid using special 
 *   **Circuit Breaker Pattern**: Use circuit breakers for external service calls
 *   **Retry Mechanisms**: Implement intelligent retry strategies with exponential backoff
 *   **Fallback Mechanisms**: Design fallback mechanisms for critical functionality
+*   **Comprehensive Error Logging**: Log errors with sufficient context (stack traces, input values, user IDs) for debugging without exposing sensitive information to users
+*   **Error Classification**: Distinguish between different error types (client vs. server errors, transient vs. persistent) and handle accordingly
+*   **Timeout Management**: Set appropriate timeouts for all external requests to prevent hanging connections
+*   **Health Check Endpoints**: Implement health check endpoints that verify the status of dependent services
+*   **Service Degradation**: Design services to continue operating with reduced functionality when non-critical dependencies fail
+*   **Error Recovery**: Implement automatic recovery mechanisms for common failure scenarios
+*   **Dead Letter Queues**: Use dead letter queues to handle messages that repeatedly fail processing
+*   **Circuit Breaker States**: Implement proper circuit breaker states (closed, open, half-open) with appropriate transition logic
+*   **Graceful Shutdown**: Implement graceful shutdown procedures that finish processing current requests before terminating
+*   **Resource Cleanup**: Ensure all resources (connections, file handles, etc.) are properly cleaned up in error conditions
+*   **User-Friendly Error Messages**: Provide clear, actionable error messages to users while not exposing internal system details
+*   **Error Monitoring**: Implement error monitoring and alerting systems to detect and respond to issues proactively
 
 ---
 
