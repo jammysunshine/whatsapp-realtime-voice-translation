@@ -272,7 +272,16 @@ async function handleAudioMessage(message, context) {
     
     // Get user preferences
     const userPrefs = await userPreferencesService.getPreferences(recipientId);
-    const targetLanguages = userPrefs.targetLanguages ? userPrefs.targetLanguages.split(',') : ['en'];
+    let targetLanguages;
+    
+    // Handle the case where targetLanguages might be an array (default) or string (from Redis)
+    if (Array.isArray(userPrefs.targetLanguages)) {
+      targetLanguages = userPrefs.targetLanguages;
+    } else if (userPrefs.targetLanguages && typeof userPrefs.targetLanguages === 'string') {
+      targetLanguages = userPrefs.targetLanguages.split(',');
+    } else {
+      targetLanguages = ['en']; // fallback
+    }
     
     // Process audio with multiple target languages
     const results = await audioProcessingPipeline.processAudioTranslationMulti(
@@ -349,7 +358,16 @@ async function handleTextMessage(message, context) {
     
     // Get user preferences
     const userPrefs = await userPreferencesService.getPreferences(recipientId);
-    const targetLanguages = userPrefs.targetLanguages ? userPrefs.targetLanguages.split(',') : ['en'];
+    let targetLanguages;
+    
+    // Handle the case where targetLanguages might be an array (default) or string (from Redis)
+    if (Array.isArray(userPrefs.targetLanguages)) {
+      targetLanguages = userPrefs.targetLanguages;
+    } else if (userPrefs.targetLanguages && typeof userPrefs.targetLanguages === 'string') {
+      targetLanguages = userPrefs.targetLanguages.split(',');
+    } else {
+      targetLanguages = ['en']; // fallback
+    }
     
     // Translate the text to multiple languages
     const results = [];
