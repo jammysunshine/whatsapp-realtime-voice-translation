@@ -5,7 +5,7 @@ module.exports = {
   port: process.env.PORT || 3000,
   google: {
     projectId: process.env.GCP_TRANSLATION_PROJECT_ID,
-    keyFilename: process.env.GCP_TRANSLATION_KEY_FILE || null,
+    keyFilename: process.env.GCP_TRANSLATION_KEY_FILE || null, // For local development
     credentials: process.env.GCP_TRANSLATION_CREDENTIALS ? JSON.parse(process.env.GCP_TRANSLATION_CREDENTIALS) : null
   },
   whatsapp: {

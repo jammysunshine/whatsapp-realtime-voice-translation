@@ -210,6 +210,7 @@ Commit messages should be simple, concise, and descriptive. Avoid using special 
 *   **Backward Compatibility**: Test that changes maintain compatibility with existing functionality.
 *   **Comprehensive Validation**: Create and run tests that validate all aspects of the implemented features before finalizing changes.
 *   **Automated Testing Integration**: All new features and optimizations must include corresponding unit tests in the test suite to ensure functionality is preserved and regressions are caught early.
+*   **Post-Deployment Testing**: After deploying services, verify endpoints are operational using shell commands like curl before configuring external webhooks. For example: `curl -X GET "https://your-domain.railway.app/health"` to check health endpoints and `curl -X GET "https://your-domain.railway.app/webhook"` to verify webhook accessibility. This ensures the service is properly running before external systems attempt to connect.
 
 ---
 

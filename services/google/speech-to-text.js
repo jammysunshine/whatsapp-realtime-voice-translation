@@ -34,10 +34,16 @@ class SpeechToTextService {
       // 1. Let Google Cloud detect the sample rate automatically (omit sampleRateHertz)
       // 2. Or convert the audio to LINEAR16 at 16kHz first
       const config = {
-        encoding: 'WEBM_OPUS', // Since we're receiving WEBM from browser
+        encoding: 'OGG_OPUS', // WhatsApp sends audio as OGG/OPUS
         languageCode: languageCode,
         enableAutomaticPunctuation: true,
         enableWordTimeOffsets: true,
+        // Explicitly handle sample rate for OPUS format
+        // For OGG_OPUS files, we can either:
+        // 1. Let Google Cloud auto-detect the sample rate by omitting SampleRateHertz (but this sometimes fails)
+        // 2. Or explicitly set a standard rate like 16000Hz which works well for most OPUS audio
+        // Let's try option 2 as it's more reliable
+        sampleRateHertz: 16000, // Standard rate that works well with OPUS audio
       };
 
       const request = {
@@ -94,9 +100,17 @@ class SpeechToTextService {
    * @returns {Promise<Object>} - Recognition response
    */
   async longRunningRecognize(audio, config) {
+    // For OGG_OPUS format, make sure we're using the correct configuration
+    const finalConfig = {
+      ...config,
+      encoding: config.encoding || 'OGG_OPUS', // Ensure correct encoding
+      // Explicitly set sample rate for OPUS format
+      sampleRateHertz: config.sampleRateHertz || 16000, // Standard rate that works well with OPUS audio
+    };
+    
     const request = {
       audio: audio,
-      config: config,
+      config: finalConfig,
     };
 
     // Perform long-running recognition

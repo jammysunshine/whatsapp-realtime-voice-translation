@@ -135,12 +135,11 @@ class AudioProcessor {
    */
   static async preprocessForSTT(audioBuffer) {
     try {
-      // For now, if audio processing fails, return the original buffer
-      // This is a fallback to handle the FFmpeg issue
+      // For WhatsApp OPUS audio, we'll return the buffer as is
+      // Google Cloud Speech-to-Text can handle OGG_OPUS format directly
       console.log('Preprocessing audio for STT...');
       
-      // Just return the original buffer for now as a fallback
-      // In a real implementation, you'd want to fix the FFmpeg processing
+      // Just return the original buffer since Google Cloud STT can handle OPUS
       return audioBuffer;
     } catch (error) {
       console.warn('Audio preprocessing failed, using original buffer:', error.message);
