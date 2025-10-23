@@ -94,13 +94,58 @@ async function handleAudioMessage(message, context) {
   try {
     console.log('Handling audio message:', message);
     
-    // TODO: Implement audio processing logic
-    // 1. Download the audio file from WhatsApp
-    // 2. Convert speech to text using Google STT
-    // 3. Translate the text
-    // 4. Send the translated text back via WhatsApp
+    // 1. Get the audio media ID from the message
+    const mediaId = message.audio.id;
+    const recipientId = context.contacts[0].wa_id;
+    
+    // 2. Download the audio file from WhatsApp
+    const whatsappService = require('../services/whatsapp/whatsapp-api');
+    const audioUrl = `https://graph.facebook.com/v18.0/${mediaId}/`;
+    
+    // Note: In a real implementation, you'd need to download the media using the access token
+    // For now, we'll simulate the process with a placeholder
+    console.log(`Downloading audio from WhatsApp with ID: ${mediaId}`);
+    
+    // 3. Download the audio from WhatsApp
+    const audioBuffer = await whatsappService.downloadMedia(mediaId);
+    console.log(`Downloaded audio, size: ${audioBuffer.length} bytes`);
+    
+    // 4. Process the audio through our translation pipeline
+    const audioProcessingPipeline = require('../utils/helpers/audio-processing-pipeline');
+    
+    // Determine target language - could be based on user preferences or context
+    // For now, default to English or try to detect from context
+    let targetLanguage = 'en'; // default
+    
+    // If the context contains language preference, use that
+    // This would come from user settings or previous interactions
+    if (context.language) {
+      targetLanguage = context.language;
+    }
+    
+    const result = await audioProcessingPipeline.processAudioTranslation(
+      audioBuffer,
+      targetLanguage
+    );
+    
+    // 5. Send the translated text back via WhatsApp
+    await whatsappService.sendTextMessage(
+      recipientId, 
+      `Original (auto-detected as ${result.transcription.language}): ${result.transcription.text}\n\nTranslation to ${targetLanguage}: ${result.translation.translatedText}`
+    );
+    
+    console.log(`Sent translation to ${recipientId}: ${result.translation.translatedText}`);
+    
   } catch (error) {
     console.error('Error handling audio message:', error);
+    // Optionally send an error message back to the user
+    const recipientId = context.contacts[0].wa_id;
+    const whatsappService = require('../services/whatsapp/whatsapp-api');
+    try {
+      await whatsappService.sendTextMessage(recipientId, 'Sorry, there was an error processing your voice message.');
+    } catch (sendError) {
+      console.error('Error sending error message to user:', sendError);
+    }
   }
 }
 
@@ -113,11 +158,39 @@ async function handleTextMessage(message, context) {
   try {
     console.log('Handling text message:', message);
     
-    // TODO: Implement text translation logic
-    // 1. Translate the text
-    // 2. Send the translated text back via WhatsApp
+    const text = message.text.body;
+    const recipientId = context.contacts[0].wa_id;
+    const whatsappService = require('../services/whatsapp/whatsapp-api');
+    const translationService = require('../services/google/translation');
+    
+    // Determine target language - could be based on user preferences or context
+    let targetLanguage = 'en'; // default
+    
+    // If the context contains language preference, use that
+    if (context.language) {
+      targetLanguage = context.language;
+    }
+    
+    // Translate the text
+    const result = await translationService.translateWithSourceDetection(text, targetLanguage);
+    
+    // Send the translated text back via WhatsApp
+    await whatsappService.sendTextMessage(
+      recipientId, 
+      `Original (auto-detected as ${result.sourceLanguage}): ${result.originalText}\n\nTranslation to ${targetLanguage}: ${result.translatedText}`
+    );
+    
+    console.log(`Sent text translation to ${recipientId}: ${result.translatedText}`);
   } catch (error) {
     console.error('Error handling text message:', error);
+    // Optionally send an error message back to the user
+    const recipientId = context.contacts[0].wa_id;
+    const whatsappService = require('../services/whatsapp/whatsapp-api');
+    try {
+      await whatsappService.sendTextMessage(recipientId, 'Sorry, there was an error processing your message.');
+    } catch (sendError) {
+      console.error('Error sending error message to user:', sendError);
+    }
   }
 }
 

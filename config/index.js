@@ -4,17 +4,17 @@ require('dotenv').config();
 module.exports = {
   port: process.env.PORT || 3000,
   google: {
-    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-    keyFilename: process.env.GOOGLE_CLOUD_KEY_FILE || null,
-    credentials: process.env.GOOGLE_CLOUD_CREDENTIALS ? JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS) : null
+    projectId: process.env.GCP_TRANSLATION_PROJECT_ID,
+    keyFilename: process.env.GCP_TRANSLATION_KEY_FILE || null,
+    credentials: process.env.GCP_TRANSLATION_CREDENTIALS ? JSON.parse(process.env.GCP_TRANSLATION_CREDENTIALS) : null
   },
   whatsapp: {
-    webhookVerifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN,
-    accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
-    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID
+    webhookVerifyToken: process.env.WHATSAPP_VOICE_TRANSLATE_VERIFY_TOKEN,
+    accessToken: process.env.WHATSAPP_VOICE_TRANSLATE_ACCESS_TOKEN,
+    phoneNumberId: process.env.WHATSAPP_VOICE_TRANSLATE_PHONE_ID
   },
   redis: {
-    url: process.env.REDIS_URL || 'redis://localhost:6379'
+    url: process.env.VOICE_TRANSLATE_REDIS_URL || 'redis://localhost:6379'
   },
   logging: {
     level: process.env.LOG_LEVEL || 'info',

@@ -30,9 +30,11 @@ class SpeechToTextService {
       };
 
       // Configure the request
+      // Note: For WEBM/OPUS audio from browsers, we should either:
+      // 1. Let Google Cloud detect the sample rate automatically (omit sampleRateHertz)
+      // 2. Or convert the audio to LINEAR16 at 16kHz first
       const config = {
-        encoding: 'LINEAR16', // Common encoding for processed audio
-        sampleRateHertz: 16000, // Standard rate for Google STT
+        encoding: 'WEBM_OPUS', // Since we're receiving WEBM from browser
         languageCode: languageCode,
         enableAutomaticPunctuation: true,
         enableWordTimeOffsets: true,
@@ -43,12 +45,28 @@ class SpeechToTextService {
         config: config,
       };
 
-      // Perform the transcription
-      const [response] = await this.client.recognize(request);
-      const transcription = response.results
-        .map(result => result.alternatives[0].transcript)
-        .join('\n');
+      let response;
+      let transcription;
       
+      try {
+        // Try synchronous recognition first
+        [response] = await this.client.recognize(request);
+        transcription = response.results
+          .map(result => result.alternatives[0].transcript)
+          .join('\n');
+      } catch (syncError) {
+        // If sync recognition fails because audio is too long, use long-running operation
+        if (syncError.message.includes('Sync input too long')) {
+          logger.info('Audio too long for sync recognition, using long-running operation');
+          response = await this.longRunningRecognize(audio, config);
+          transcription = response.results
+            .map(result => result.alternatives[0].transcript)
+            .join('\n');
+        } else {
+          throw syncError; // Re-throw if it's a different error
+        }
+      }
+
       // Calculate and log processing time
       const processingTime = Date.now() - startTime;
       logProcessingTime('stt', processingTime);
@@ -67,6 +85,25 @@ class SpeechToTextService {
       logger.error('Speech-to-Text error:', error);
       throw new Error(`STT Service Error: ${error.message}`);
     }
+  }
+
+  /**
+   * Perform long-running recognition for longer audio files
+   * @param {Object} audio - Audio object with content
+   * @param {Object} config - Recognition configuration
+   * @returns {Promise<Object>} - Recognition response
+   */
+  async longRunningRecognize(audio, config) {
+    const request = {
+      audio: audio,
+      config: config,
+    };
+
+    // Perform long-running recognition
+    const [operation] = await this.client.longRunningRecognize(request);
+    const [response] = await operation.promise();
+    
+    return response;
   }
 
   /**

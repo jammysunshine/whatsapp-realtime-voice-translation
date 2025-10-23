@@ -137,32 +137,40 @@ class WhatsAppAPIService {
   }
 
   /**
-   * Upload media to WhatsApp Cloud API
-   * @param {Buffer} mediaBuffer - The media file as buffer
-   * @param {string} mimeType - MIME type of the media
-   * @param {string} fileName - Name of the file
-   * @returns {Promise<string>} - ID of the uploaded media
+   * Download media from WhatsApp Cloud API
+   * @param {string} mediaId - The ID of the media to download
+   * @returns {Promise<Buffer>} - The downloaded media as buffer
    */
-  async uploadMedia(mediaBuffer, mimeType, fileName) {
+  async downloadMedia(mediaId) {
     try {
-      logger.info(`Uploading media file: ${fileName}`);
+      logger.info(`Downloading media with ID: ${mediaId}`);
       
-      // Create form data for the file upload
-      const formData = new FormData();
-      const fileBlob = new Blob([mediaBuffer], { type: mimeType });
-      formData.append('file', fileBlob, fileName);
-      formData.append('type', mimeType);
+      // First get the media URL from WhatsApp
+      const mediaInfoResponse = await this.apiClient.get(
+        `/${mediaId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`
+          }
+        }
+      );
       
-      // Note: For actual implementation, you might need to use a different approach
-      // because the WhatsApp Cloud API expects a URL, not direct file upload
-      // You'll likely need to upload to a file hosting service first
+      const mediaUrl = mediaInfoResponse.data.url;
       
-      // For demonstration purposes only - in real implementation,
-      // you would upload to a cloud storage service like AWS S3, Google Cloud Storage, etc.
-      throw new Error('Direct file upload not supported, use cloud storage service');
+      // Then download the actual media file
+      const mediaResponse = await this.apiClient.get(mediaUrl, {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`
+        },
+        responseType: 'arraybuffer'  // Get response as buffer
+      });
+      
+      logger.info(`Successfully downloaded media, size: ${mediaResponse.data.length} bytes`);
+      return Buffer.from(mediaResponse.data);
+      
     } catch (error) {
-      logger.error('Error uploading media:', error.message);
-      throw new Error(`WhatsApp Media Upload Error: ${error.message}`);
+      logger.error('Error downloading media:', error.response?.data || error.message);
+      throw new Error(`WhatsApp Media Download Error: ${error.message}`);
     }
   }
 

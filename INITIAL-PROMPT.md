@@ -2,7 +2,7 @@
 
 ## Project Goal
 
-Create a Node.js-based WhatsApp Business API integration that functions as a real-time language translation bot using only free or generously free-tier services. The bot will receive voice messages (voice notes) from WhatsApp users, convert them to text using Speech-to-Text (STT) services in real-time, translate the text to multiple target languages (English, Arabic, Hindi, Spanish, French, Portuguese) with minimal latency, and respond with the translations via WhatsApp within seconds of receiving the voice message - all while operating within free tier limitations.
+Create a Node.js-based WhatsApp Business API integration that functions as a real-time language translation bot using only free or generously free-tier services. The bot will receive voice messages (voice notes) from WhatsApp users via webhooks, convert them to text using Speech-to-Text (STT) services in real-time, translate the text to multiple target languages (English, Arabic, Hindi, Spanish, French, Portuguese) with minimal latency, and respond with the translations via real WhatsApp with sub-second response times - all while operating within free tier limitations.
 
 ## Core Features
 
@@ -10,7 +10,7 @@ Create a Node.js-based WhatsApp Business API integration that functions as a rea
 2. **Real-time Voice Note Processing**: Download and process incoming voice notes using STT services with optimized performance within free tier limitations
 3. **Automatic Language Detection**: Identify the language of the incoming voice note using advanced language identification algorithms with free-tier services
 4. **Real-time Multi-Language Translation**: Translate the transcribed text to English, Arabic, Hindi, Spanish, French, and Portuguese with minimal latency using free-tier translation APIs
-5. **Real-time WhatsApp Response**: Send back translations formatted appropriately for WhatsApp with sub-second response times using only free-tier WhatsApp Business API
+5. **Real-time WhatsApp Response**: Send back translations to real WhatsApp users with sub-second response times using only free-tier WhatsApp Business API
 6. **Real-time Webhook Validation**: Implement proper webhook validation to secure the endpoint with minimal latency impact using free-tier compatible security measures
 7. **Real-time Media Handling**: Efficiently download, process, and clean up media files with streaming capabilities using free-tier storage and bandwidth
 8. **Real-time Performance Monitoring**: Track processing times, latency, and system health with live metrics using free-tier monitoring tools

@@ -1,20 +1,21 @@
 # WhatsApp Real-Time Voice Translation
 
-A real-time voice translation system that integrates with WhatsApp to provide instant language translation for voice messages.
+A real-time voice translation bot that integrates with WhatsApp Business API to provide instant language translation for voice messages.
 
 ## Overview
 
-This system receives voice messages from WhatsApp, converts them to text using Google Cloud Speech-to-Text, translates the text to multiple languages using Google Cloud Translation API, and sends the translated response back to the user via WhatsApp.
+This system receives voice messages from WhatsApp users via webhooks, converts them to text using Google Cloud Speech-to-Text, translates the text to multiple languages using Google Cloud Translation API, and sends the translated response back to the user via real WhatsApp. The system operates as a backend service that connects directly to the WhatsApp Business API.
 
 ## Features
 
-- Real-time voice message processing
+- Real-time voice message processing from WhatsApp
 - Automatic speech recognition (ASR)
 - Multi-language translation
 - WhatsApp Business API integration
-- WebSocket support for real-time communication
+- Automatic language detection
 - Performance monitoring
 - Audio quality enhancement
+- Text message translation (in addition to voice notes)
 
 ## Prerequisites
 
@@ -45,7 +46,9 @@ cp .env.example .env
 
 ## Usage
 
-1. Start the server:
+1. Set up your WhatsApp Business Account and obtain the required credentials (access token, phone number ID)
+
+2. Start the server:
 ```bash
 npm run dev
 ```
@@ -55,23 +58,25 @@ or for production:
 npm start
 ```
 
-2. Configure your WhatsApp webhook to point to your server's `/webhook` endpoint.
+3. Configure your WhatsApp webhook to point to your server's `/webhook` endpoint with the verification token you specify in your environment variables.
+
+4. The system will automatically process incoming voice and text messages from WhatsApp users, translate them, and send responses back to the users.
 
 ## Architecture
 
 The system consists of the following components:
-- Express.js server for handling webhooks
-- WebSocket server for real-time communication
+- Express.js server for handling WhatsApp webhooks
 - Google Cloud Speech-to-Text service
 - Google Cloud Translation service
 - Google Cloud Text-to-Speech service
 - WhatsApp Business API integration
 - Audio processing pipeline
+- Message queue for handling concurrent requests
 
 ## API Endpoints
 
 - `GET /webhook` - Webhook verification
-- `POST /webhook` - Receive WhatsApp messages
+- `POST /webhook` - Receive WhatsApp messages from the WhatsApp Business API
 - `GET /health` - Health check
 - `GET /metrics` - Performance metrics
 
@@ -81,11 +86,42 @@ The system consists of the following components:
 - Google Cloud Speech-to-Text API
 - Google Cloud Translation API
 - Google Cloud Text-to-Speech API
-- WebSocket
+- WhatsApp Business API
 - Redis
 - Bull Queue
 - FFmpeg for audio processing
 - Winston for logging
+
+## Deployment
+
+### Railway (Recommended)
+
+The application is configured for easy deployment to Railway:
+
+1. Sign up at [Railway](https://railway.app)
+2. Connect your GitHub repository
+3. Add environment variables in the Railway dashboard:
+   - `GOOGLE_CLOUD_PROJECT_ID`
+   - `GOOGLE_CLOUD_KEY_FILE` (as a JSON string)
+   - `WHATSAPP_WEBHOOK_VERIFY_TOKEN`
+   - `WHATSAPP_ACCESS_TOKEN`
+   - `WHATSAPP_PHONE_NUMBER_ID`
+   - `REDIS_URL`
+4. Add a Redis addon through Railway
+5. Deploy the application
+
+### Environment Configuration
+
+When deploying to any platform, ensure these environment variables are set:
+```
+GOOGLE_CLOUD_PROJECT_ID=your-google-project-id
+GOOGLE_CLOUD_KEY_FILE=your-service-account-json-string
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=your-webhook-verify-token
+WHATSAPP_ACCESS_TOKEN=your-whatsapp-access-token
+WHATSAPP_PHONE_NUMBER_ID=your-phone-number-id
+REDIS_URL=your-redis-connection-string
+PORT=3000  # Usually set by the platform
+```
 
 ## License
 
