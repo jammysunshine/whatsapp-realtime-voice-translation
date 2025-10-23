@@ -1,8 +1,19 @@
 # Generic Development Workflow Guidelines
 
-This file contains generic development workflow guidelines that apply across all projects in this organization. These principles, practices, and mandates are designed to ensure consistent development quality, security, and collaboration standards.
+This file contains generic development workflow guidelines that apply across ALL projects in this organization. These principles, practices, and mandates are designed to ensure consistent development quality, security, and collaboration standards ACROSS ALL PROJECTS.
 
-For project-specific instructions, refer to the INITIAL-PROMPT.md file in each project's root directory.
+## ⚠️ IMPORTANT MANDATE: GENERIC NATURE OF THIS FILE
+
+**THIS IS A GENERIC GUIDELINE FILE**: This `gemini.md` file contains ONLY generic development workflows, practices, and standards that apply to ALL projects universally. It should NOT contain project-specific implementation details, features, or requirements.
+
+**PROJECT-SPECIFIC MANDATES**: All project-specific requirements, features, implementation details, and project-specific guidelines MUST be documented in project-specific files such as:
+- `INITIAL-PROMPT.md` (main project requirements)
+- `README.md` (project-specific setup and usage)
+- Project-specific documentation files
+
+**CROSS-REFERENCE REQUIREMENT**: This file MAY reference project-specific files for detailed information but should not duplicate or contain project-specific content.
+
+For project-specific instructions, ALWAYS refer to the `INITIAL-PROMPT.md` file and other project-specific documentation files in each project's root directory.
 
 ---
 
@@ -195,9 +206,15 @@ Commit messages should be simple, concise, and descriptive. Avoid using special 
 ## Agent Workflow Mandates
 
 *   **Self-Review Before Testing**: Always perform a thorough self-review of all implemented changes, including code, configuration, and documentation, to ensure correctness, completeness, and adherence to project standards *before* asking the user to test.
-*   **Update gemini.md Regularly**: As a critical mandate, this `gemini.md` file must be updated automatically after every major feature implementation or optimization work to document the changes and keep the guidelines current. This includes documenting new testing practices, monitoring features, configuration options, and code quality improvements.
+*   **Update gemini.md Regularly**: As a critical mandate, this `gemini.md` file must be updated automatically after every major feature implementation or optimization work to document the changes and keep the generic guidelines current. This includes documenting new testing practices, monitoring features, configuration options, and code quality improvements THAT APPLY GENERALLY TO ALL PROJECTS.
 *   **Branch Cleanup**: Regularly delete unused or merged feature branches to maintain a clean and manageable repository structure.
 *   **Documentation First**: Prioritize documentation updates when implementing new features to ensure knowledge retention.
+
+## ⚠️ PROJECT-SPECIFIC CONTENT SEPARATION MANDATE
+
+**PROJECT-SPECIFIC UPDATES MUST BE DOCUMENTED IN PROJECT-SPECIFIC FILES**: Any project-specific implementation details, features, or accomplishments must be documented in project-specific files such as `INITIAL-PROMPT.md` or `README.md`, NOT in this generic `gemini.md` file.
+
+**REMOVAL OF PROJECT-SPECIFIC CONTENT**: The following content was previously incorrectly added to this generic file and violates the separation of concerns mandate. Such content should be moved to project-specific documentation files.
 
 ---
 
@@ -210,7 +227,11 @@ Commit messages should be simple, concise, and descriptive. Avoid using special 
 *   **Backward Compatibility**: Test that changes maintain compatibility with existing functionality.
 *   **Comprehensive Validation**: Create and run tests that validate all aspects of the implemented features before finalizing changes.
 *   **Automated Testing Integration**: All new features and optimizations must include corresponding unit tests in the test suite to ensure functionality is preserved and regressions are caught early.
-*   **Post-Deployment Testing**: After deploying services, verify endpoints are operational using shell commands like curl before configuring external webhooks. For example: `curl -X GET "https://your-domain.railway.app/health"` to check health endpoints and `curl -X GET "https://your-domain.railway.app/webhook"` to verify webhook accessibility. This ensures the service is properly running before external systems attempt to connect.
+*   **Real-time Production Testing**: After deploying services, verify endpoints are operational using shell commands like curl before configuring external webhooks. For example: `curl -X GET "https://your-domain.example.com/health"` to check health endpoints and `curl -X GET "https://your-domain.example.com/webhook"` to verify webhook accessibility. This ensures the service is properly running before external systems attempt to connect.
+*   **External Service Integration Testing**: Test with real external service messages to verify end-to-end functionality including media download, processing, transformation, and response delivery.
+*   **Audio Format Testing**: Verify proper handling of various audio formats, particularly service-specific audio formats with explicit sample rate configuration.
+*   **Performance Testing**: Monitor response times and throughput to ensure sub-2-second processing for the complete media processing pipeline.
+*   **Post-Deployment Testing**: After deploying services, verify endpoints are operational using shell commands like curl before configuring external webhooks. For example: `curl -X GET "https://your-domain.example.com/health"` to check health endpoints and `curl -X GET "https://your-domain.example.com/webhook"` to verify webhook accessibility. This ensures the service is properly running before external systems attempt to connect.
 
 ---
 
@@ -221,6 +242,9 @@ Commit messages should be simple, concise, and descriptive. Avoid using special 
 *   **Proper Error Handling**: Preserve and maintain error handling mechanisms when refactoring or adding new functionality.
 *   **Configuration-Driven Development**: Use configuration files to manage settings, API parameters, and feature flags to maintain flexibility and maintainability.
 *   **API Documentation Adherence**: Follow official API documentation to implement features correctly, such as using proper parameters for automatic language detection rather than omitting required fields.
+*   **Audio Format Compatibility**: When working with audio processing, ensure proper handling of various formats and explicit configuration of sample rates when required by external services.
+*   **External Service Integration**: When integrating with external services, implement explicit configuration for format-specific requirements rather than relying on automatic detection which may fail.
+*   **Real-time Processing Optimization**: Optimize processing pipelines for real-time performance with proper queuing, streaming, and asynchronous operations to maintain sub-second response times.
 
 ---
 
@@ -235,3 +259,6 @@ Commit messages should be simple, concise, and descriptive. Avoid using special 
 *   **Performance Monitoring**: Implement and maintain performance monitoring capabilities to track application health and identify optimization opportunities.
 *   **Dependency Management**: Regularly audit dependencies for security vulnerabilities and keep packages up-to-date while maintaining compatibility.
 *   **Environment-Specific Behavior**: Implement configuration options that allow the application to adapt its behavior based on the deployment environment (development, staging, production).
+*   **Audio Processing Optimization**: Optimize audio processing pipelines with proper format handling, sample rate configuration, and streaming operations to ensure real-time performance.
+*   **Error Recovery**: Implement graceful degradation and proper error handling for external service failures with informative user feedback.
+*   **Monitoring and Alerting**: Implement comprehensive monitoring with appropriate alerting for critical system failures and performance issues.

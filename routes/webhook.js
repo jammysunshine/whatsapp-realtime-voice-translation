@@ -3,6 +3,7 @@ const express = require('express');
 const axios = require('axios');
 const config = require('../config');
 const monitoring = require('../utils/helpers/monitoring');
+const userPreferencesService = require('../services/user-preferences');
 
 const router = express.Router();
 
@@ -66,7 +67,8 @@ router.post('/', async (req, res) => {
  */
 async function processMessage(message, context) {
   console.log('Processing message:', message);
-
+  const recipientId = context.contacts[0].wa_id;
+  
   // Handle different message types
   switch (message.type) {
     case 'audio':
@@ -75,13 +77,168 @@ async function processMessage(message, context) {
       await handleAudioMessage(message, context);
       break;
     case 'text':
-      // Process text message
-      monitoring.incrementTranslationCounter('whatsapp_text', 'unknown', context.recipient?.language || 'unknown');
-      await handleTextMessage(message, context);
+      // Check if this is a command message
+      const text = message.text.body;
+      if (text.startsWith('!')) {
+        await handleCommand(text, recipientId);
+      } else {
+        // Process regular text message
+        monitoring.incrementTranslationCounter('whatsapp_text', 'unknown', context.recipient?.language || 'unknown');
+        await handleTextMessage(message, context);
+      }
       break;
     default:
       console.log(`Unsupported message type: ${message.type}`);
       monitoring.incrementErrorCounter('unsupported_message_type', 'whatsapp');
+  }
+}
+
+/**
+ * Handle command messages starting with !
+ * @param {string} command - The command text
+ * @param {string} recipientId - The WhatsApp ID of the recipient
+ */
+async function handleCommand(command, recipientId) {
+  const whatsappService = require('../services/whatsapp/whatsapp-api');
+  
+  try {
+    console.log(`Processing command from ${recipientId}: ${command}`);
+    
+    // Parse the command
+    const parts = command.split(' ');
+    const cmd = parts[0].toLowerCase();
+    
+    switch (cmd) {
+      case '!lang':
+      case '!language':
+        // Set target language(s) for translations
+        if (parts.length < 2) {
+          // Show current language settings
+          const currentPrefs = await userPreferencesService.getPreferences(recipientId);
+          await whatsappService.sendTextMessage(
+            recipientId,
+            `Current settings:\nSource: ${currentPrefs.sourceLanguage}\nTargets: ${currentPrefs.targetLanguages.join(', ')}\n\nSend !lang <lang1> <lang2> to set target languages (e.g., "!lang es fr" for Spanish and French)`
+          );
+          return;
+        }
+        
+        const languages = parts.slice(1).filter(lang => lang.length === 2); // Basic filter for 2-letter language codes
+        if (languages.length === 0) {
+          await whatsappService.sendTextMessage(
+            recipientId,
+            'Please provide valid language codes (e.g., "es" for Spanish, "fr" for French). Example: !lang es fr'
+          );
+          return;
+        }
+        
+        const setResult = await userPreferencesService.setTargetLanguages(recipientId, languages);
+        if (setResult) {
+          await whatsappService.sendTextMessage(
+            recipientId,
+            `Target languages set to: ${languages.join(', ')}`
+          );
+        } else {
+          await whatsappService.sendTextMessage(
+            recipientId,
+            'Error setting language preferences. Please try again.'
+          );
+        }
+        break;
+        
+      case '!srclang':
+        // Set source language for translations
+        if (parts.length < 2) {
+          await whatsappService.sendTextMessage(
+            recipientId,
+            'Please specify a source language code. Example: !srclang en'
+          );
+          return;
+        }
+        
+        const sourceLang = parts[1].toLowerCase();
+        if (sourceLang.length !== 2) {
+          await whatsappService.sendTextMessage(
+            recipientId,
+            'Please provide a valid 2-letter language code (e.g., "en", "es", "fr").'
+          );
+          return;
+        }
+        
+        const sourceSetResult = await userPreferencesService.setSourceLanguage(recipientId, sourceLang);
+        if (sourceSetResult) {
+          await whatsappService.sendTextMessage(
+            recipientId,
+            `Source language set to: ${sourceLang}`
+          );
+        } else {
+          await whatsappService.sendTextMessage(
+            recipientId,
+            'Error setting source language. Please try again.'
+          );
+        }
+        break;
+        
+      case '!response':
+        // Set response mode (text, voice, or both)
+        if (parts.length < 2) {
+          const currentPrefs = await userPreferencesService.getPreferences(recipientId);
+          await whatsappService.sendTextMessage(
+            recipientId,
+            `Current response mode: ${currentPrefs.responseMode}\n\nAvailable modes: text, voice, both\nExample: !response both`
+          );
+          return;
+        }
+        
+        const responseMode = parts[1].toLowerCase();
+        if (!['text', 'voice', 'both'].includes(responseMode)) {
+          await whatsappService.sendTextMessage(
+            recipientId,
+            'Invalid response mode. Use: text, voice, or both. Example: !response both'
+          );
+          return;
+        }
+        
+        const responseSetResult = await userPreferencesService.setResponseMode(recipientId, responseMode);
+        if (responseSetResult) {
+          await whatsappService.sendTextMessage(
+            recipientId,
+            `Response mode set to: ${responseMode}`
+          );
+        } else {
+          await whatsappService.sendTextMessage(
+            recipientId,
+            'Error setting response mode. Please try again.'
+          );
+        }
+        break;
+        
+      case '!help':
+        // Show available commands
+        await whatsappService.sendTextMessage(
+          recipientId,
+          `Available commands:\n` +
+          `!lang <langs> - Set target languages (e.g., !lang es fr)\n` +
+          `!srclang <lang> - Set source language (e.g., !srclang en)\n` +
+          `!response <mode> - Set response mode: text, voice, or both\n` +
+          `!help - Show this help message`
+        );
+        break;
+        
+      default:
+        await whatsappService.sendTextMessage(
+          recipientId,
+          `Unknown command: ${cmd}. Send !help for available commands.`
+        );
+        break;
+    }
+  } catch (error) {
+    console.error('Error handling command:', error);
+    const whatsappService = require('../services/whatsapp/whatsapp-api');
+    try {
+      await whatsappService.sendTextMessage(recipientId, 'Sorry, there was an error processing your command.');
+    } catch (sendError) {
+      console.error('Error sending error message to user:', sendError);
+    }
   }
 }
 
@@ -113,28 +270,55 @@ async function handleAudioMessage(message, context) {
     // 4. Process the audio through our translation pipeline
     const audioProcessingPipeline = require('../utils/helpers/audio-processing-pipeline');
     
-    // Determine target language - could be based on user preferences or context
-    // For now, default to English or try to detect from context
-    let targetLanguage = 'en'; // default
+    // Get user preferences
+    const userPrefs = await userPreferencesService.getPreferences(recipientId);
+    const targetLanguages = userPrefs.targetLanguages ? userPrefs.targetLanguages.split(',') : ['en'];
     
-    // If the context contains language preference, use that
-    // This would come from user settings or previous interactions
-    if (context.language) {
-      targetLanguage = context.language;
+    // Process audio with multiple target languages
+    const results = await audioProcessingPipeline.processAudioTranslationMulti(
+      audioBuffer,
+      targetLanguages.map(lang => lang.trim())
+    );
+    
+    // Get user response preferences (userPrefs already fetched above)
+    const responseMode = userPrefs.responseMode || 'text';
+    
+    // Prepare the text response
+    let responseMessage = `Original (auto-detected as ${results[0].transcription.language}): ${results[0].transcription.text}\n\n`;
+    
+    for (const result of results) {
+      responseMessage += `Translation to ${result.translation.targetLanguage.toUpperCase()}: ${result.translation.translatedText}\n\n`;
     }
     
-    const result = await audioProcessingPipeline.processAudioTranslation(
-      audioBuffer,
-      targetLanguage
-    );
+    // Send text response
+    await whatsappService.sendTextMessage(recipientId, responseMessage);
     
-    // 5. Send the translated text back via WhatsApp
-    await whatsappService.sendTextMessage(
-      recipientId, 
-      `Original (auto-detected as ${result.transcription.language}): ${result.transcription.text}\n\nTranslation to ${targetLanguage}: ${result.translation.translatedText}`
-    );
+    // If user wants voice responses, send voice messages too
+    if (responseMode === 'voice' || responseMode === 'both') {
+      // Import media uploader service
+      const mediaUploader = require('../services/media-uploader');
+      
+      for (const result of results) {
+        try {
+          // Upload and send the audio response
+          await mediaUploader.uploadAndSendAudio(
+            whatsappService,
+            recipientId,
+            result.tts.audioContent, // The audio content from TTS
+            'ogg' // WhatsApp typically expects OGG/OPUS format
+          );
+        } catch (uploadError) {
+          console.error(`Error sending voice response for ${result.translation.targetLanguage}:`, uploadError);
+          // If voice response fails, send a text notification
+          await whatsappService.sendTextMessage(
+            recipientId,
+            `Audio response in ${result.translation.targetLanguage.toUpperCase()} could not be delivered due to technical issues.`
+          );
+        }
+      }
+    }
     
-    console.log(`Sent translation to ${recipientId}: ${result.translation.translatedText}`);
+    console.log(`Sent multi-language translation to ${recipientId} with response mode: ${responseMode}`);
     
   } catch (error) {
     console.error('Error handling audio message:', error);
@@ -163,24 +347,86 @@ async function handleTextMessage(message, context) {
     const whatsappService = require('../services/whatsapp/whatsapp-api');
     const translationService = require('../services/google/translation');
     
-    // Determine target language - could be based on user preferences or context
-    let targetLanguage = 'en'; // default
+    // Get user preferences
+    const userPrefs = await userPreferencesService.getPreferences(recipientId);
+    const targetLanguages = userPrefs.targetLanguages ? userPrefs.targetLanguages.split(',') : ['en'];
     
-    // If the context contains language preference, use that
-    if (context.language) {
-      targetLanguage = context.language;
+    // Translate the text to multiple languages
+    const results = [];
+    for (const lang of targetLanguages) {
+      const result = await translationService.translateWithSourceDetection(text, lang.trim());
+      results.push({
+        language: lang.trim(),
+        result: result
+      });
     }
     
-    // Translate the text
-    const result = await translationService.translateWithSourceDetection(text, targetLanguage);
+    // Get user response preferences (userPrefs already fetched above)
+    const responseMode = userPrefs.responseMode || 'text';
     
     // Send the translated text back via WhatsApp
-    await whatsappService.sendTextMessage(
-      recipientId, 
-      `Original (auto-detected as ${result.sourceLanguage}): ${result.originalText}\n\nTranslation to ${targetLanguage}: ${result.translatedText}`
-    );
+    let responseMessage = `Original (auto-detected as ${results[0].result.sourceLanguage}): ${results[0].result.originalText}\n\n`;
     
-    console.log(`Sent text translation to ${recipientId}: ${result.translatedText}`);
+    for (const item of results) {
+      responseMessage += `Translation to ${item.language.toUpperCase()}: ${item.result.translatedText}\n\n`;
+    }
+    
+    await whatsappService.sendTextMessage(recipientId, responseMessage);
+    
+    // If user wants voice responses, send voice messages too
+    if (responseMode === 'voice' || responseMode === 'both') {
+      // For text messages, we need to convert the translated text to speech first
+      const textToSpeechService = require('../services/google/text-to-speech');
+      const mediaUploader = require('../services/media-uploader');
+      
+      // Local function to convert language code to BCP-47 format
+      const convertToBCP47 = (languageCode) => {
+        const bcp47Map = {
+          'en': 'en-US',
+          'es': 'es-ES',
+          'fr': 'fr-FR',
+          'de': 'de-DE',
+          'it': 'it-IT',
+          'pt': 'pt-BR',
+          'ru': 'ru-RU',
+          'ar': 'ar-XA',
+          'hi': 'hi-IN',
+          'zh': 'zh-CN',
+          'ja': 'ja-JP',
+          'ko': 'ko-KR',
+          'tr': 'tr-TR'
+        };
+        
+        return bcp47Map[languageCode] || `${languageCode}-${languageCode.toUpperCase()}`;
+      };
+      
+      for (const item of results) {
+        try {
+          // Convert translated text to speech
+          const ttsResult = await textToSpeechService.synthesizeText(
+            item.result.translatedText,
+            convertToBCP47(item.language)
+          );
+          
+          // Upload and send the audio response
+          await mediaUploader.uploadAndSendAudio(
+            whatsappService,
+            recipientId,
+            ttsResult.audioContent, // The audio content from TTS
+            'ogg' // WhatsApp typically expects OGG/OPUS format
+          );
+        } catch (ttsError) {
+          console.error(`Error generating voice response for ${item.language}:`, ttsError);
+          // If voice response fails, send a text notification
+          await whatsappService.sendTextMessage(
+            recipientId,
+            `Audio response in ${item.language.toUpperCase()} could not be generated due to technical issues.`
+          );
+        }
+      }
+    }
+    
+    console.log(`Sent multi-language text translation to ${recipientId} with response mode: ${responseMode}`);
   } catch (error) {
     console.error('Error handling text message:', error);
     // Optionally send an error message back to the user

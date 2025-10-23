@@ -21,7 +21,9 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Note: No static files needed as this is a pure webhook integration
+// Serve static files from temp directory for audio files
+app.use('/temp', express.static('./temp'));
+
 // All functionality is through WhatsApp Business API webhooks
 
 // Import routes

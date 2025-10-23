@@ -101,6 +101,97 @@ class AudioProcessingPipeline {
   }
 
   /**
+   * Process audio with multiple target language translations
+   * @param {Buffer} audioBuffer - The input audio buffer
+   * @param {Array<string>} targetLanguages - Array of target languages for translation
+   * @param {string} sourceLanguage - Source language (optional, auto-detect if not provided)
+   * @returns {Promise<Array>} - Array of processing results for each language
+   */
+  async processAudioTranslationMulti(audioBuffer, targetLanguages, sourceLanguage = null) {
+    try {
+      const startTime = Date.now();
+      logger.info(`Starting multi-language audio translation pipeline: ${sourceLanguage || 'auto'} -> [${targetLanguages.join(', ')}]`);
+      
+      // Step 1: Preprocess audio for optimal STT performance
+      logger.info('Step 1: Preprocessing audio');
+      const processedAudio = await AudioProcessor.preprocessForSTT(audioBuffer);
+      
+      // Step 2: Convert speech to text (single transcription)
+      logger.info('Step 2: Converting speech to text');
+      let transcriptionResult;
+      
+      if (sourceLanguage) {
+        transcriptionResult = await speechToTextService.transcribeAudio(processedAudio, this.convertToBCP47(sourceLanguage));
+      } else {
+        transcriptionResult = await speechToTextService.transcribeWithLanguageDetection(processedAudio);
+        sourceLanguage = transcriptionResult.detectedLanguage || transcriptionResult.languageCode.split('-')[0];
+      }
+      
+      const transcribedText = transcriptionResult.transcription;
+      logger.info(`Transcribed text: ${transcribedText.substring(0, 50)}...`);
+      
+      // Step 3: Translate the text to multiple languages
+      const results = [];
+      for (const targetLang of targetLanguages) {
+        logger.info(`Translating to ${targetLang}`);
+        const translationResult = await translationService.translateText(
+          transcribedText,
+          targetLang,
+          sourceLanguage
+        );
+        
+        // Step 4: Convert translated text back to speech
+        logger.info(`Converting translated text to speech in ${targetLang}`);
+        const ttsResult = await textToSpeechService.synthesizeText(
+          translationResult.translatedText,
+          this.convertToBCP47(targetLang)
+        );
+        
+        // Add result to array
+        results.push({
+          originalAudio: audioBuffer,
+          processedAudio: processedAudio,
+          transcription: {
+            text: transcribedText,
+            language: sourceLanguage,
+            confidence: transcriptionResult.confidence,
+            processingTime: transcriptionResult.processingTime
+          },
+          translation: {
+            originalText: translationResult.originalText,
+            translatedText: translationResult.translatedText,
+            sourceLanguage: translationResult.sourceLanguage,
+            targetLanguage: targetLang,
+            processingTime: translationResult.processingTime
+          },
+          tts: {
+            audioContent: ttsResult.audioContent,
+            language: targetLang,
+            processingTime: ttsResult.processingTime
+          },
+          pipelineCompleted: true
+        });
+      }
+      
+      // Calculate and log total processing time
+      const totalProcessingTime = Date.now() - startTime;
+      logProcessingTime('multi-language-pipeline', totalProcessingTime);
+      
+      logger.info(`Multi-language audio translation pipeline completed in ${totalProcessingTime}ms for ${targetLanguages.length} languages`);
+      
+      // Increment translation counter for each target language
+      for (let i = 0; i < targetLanguages.length; i++) {
+        incrementTranslation();
+      }
+      
+      return results;
+    } catch (error) {
+      logger.error('Multi-language audio processing pipeline error:', error);
+      throw new Error(`Multi-Language Audio Processing Pipeline Error: ${error.message}`);
+    }
+  }
+
+  /**
    * Process audio using the queue system for better resource management
    * @param {Buffer} audioBuffer - The input audio buffer
    * @param {string} targetLanguage - Target language for translation
